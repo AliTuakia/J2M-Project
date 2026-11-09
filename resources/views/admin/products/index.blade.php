@@ -1,0 +1,7 @@
+@extends('layouts.app')
+@section('title', 'Kelola Produk')
+@section('content')
+<div class="section-heading"><h1>Produk</h1><a class="button" href="{{ route('admin.products.create') }}">Tambah produk</a></div><p class="muted">Stok adalah data demo. Nonaktifkan produk untuk menghapusnya dari katalog tanpa menghapus riwayat pesanan.</p>
+<div class="table-wrap"><table><thead><tr><th>Produk</th><th>Kategori</th><th>Harga</th><th>Stok demo</th><th>Status</th><th>Tindakan</th></tr></thead><tbody>@forelse($products as $product)<tr><td>{{ $product->name }}</td><td>{{ $product->category->name }}</td><td>Rp{{ number_format($product->price, 0, ',', '.') }}</td><td>{{ $product->stock }}</td><td>{{ $product->is_active ? 'Aktif' : 'Nonaktif' }}</td><td><a class="text-link" href="{{ route('admin.products.edit', $product) }}">Ubah</a>@if($product->is_active)<form method="post" action="{{ route('admin.products.destroy', $product) }}">@csrf @method('DELETE')<button class="link-button danger-text" type="submit">Nonaktifkan</button></form>@endif</td></tr>@empty<tr><td colspan="6">Belum ada produk.</td></tr>@endforelse</tbody></table></div>
+@include('partials.pagination', ['paginator' => $products])
+@endsection

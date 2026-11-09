@@ -1,0 +1,10 @@
+@extends('layouts.app')
+@section('title', 'Keranjang')
+@section('content')
+<h1>Keranjang Anda</h1><p class="muted">Harga dan stok diperiksa kembali saat checkout. Semua pembelian adalah simulasi.</p>
+@forelse($items as $item)
+<article class="panel cart-line"><div><h2><a href="{{ route('products.show', $item->product) }}">{{ $item->product->name }}</a></h2><p>Rp{{ number_format($item->product->price, 0, ',', '.') }} / harga produk</p>@if($item->motorcycle_type)<p><strong>Tipe motor:</strong> {{ $item->motorcycle_type }}</p><p class="preserve-text"><strong>Request:</strong> {{ $item->request_notes ?: 'Tidak ada catatan.' }}</p>@endif @if(!$item->product->is_active)<p class="danger-text">Produk nonaktif. Hapus item ini sebelum checkout.</p>@endif</div>
+<div><form method="post" action="{{ route('cart.update', $item->id) }}" class="inline-form">@csrf @method('PATCH')<div><label for="quantity-{{ $item->id }}">Jumlah</label><input id="quantity-{{ $item->id }}" name="quantity" type="number" min="1" max="99" value="{{ $item->quantity }}" required></div><button class="secondary" type="submit">Perbarui</button></form><p class="price">Rp{{ number_format($item->quantity * $item->product->price, 0, ',', '.') }}</p><form method="post" action="{{ route('cart.destroy', $item->id) }}">@csrf @method('DELETE')<button type="submit" class="link-button danger-text">Hapus item</button></form></div></article>
+@empty<div class="empty-state"><h2>Keranjang masih kosong</h2><a class="button" href="{{ route('catalog') }}">Lihat produk</a></div>@endforelse
+@if($items->isNotEmpty())<section class="summary"><p>Total sementara <strong>Rp{{ number_format($items->sum(fn ($item) => $item->quantity * $item->product->price), 0, ',', '.') }}</strong></p><a class="button" href="{{ route('checkout.create') }}">Lanjut ke checkout simulasi</a></section>@endif
+@endsection
