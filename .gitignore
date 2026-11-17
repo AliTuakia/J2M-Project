@@ -15,6 +15,25 @@
 /.vscode
 /.zed
 /auth.json
+# Never commit local package/cloud credentials or private key bundles.
+auth.json
+.npmrc
+.netrc
+.aws/
+.ssh/
+.config/gcloud/
+credentials.json
+*service-account*.json
+secrets/
+id_rsa*
+id_ed25519*
+*.pem
+*.key
+*.p12
+*.pfx
+*.sql
+*.sql.gz
+*.sqlite*
 /node_modules
 /public/build
 /public/hot

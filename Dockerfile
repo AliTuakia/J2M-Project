@@ -35,7 +35,7 @@ RUN mkdir -p /config/caddy /data/caddy \
     && chmod -R u+rwX,g+rwX storage bootstrap/cache \
     && setcap CAP_NET_BIND_SERVICE=+eip /usr/local/bin/frankenphp
 
-ENV PORT=8080 \
+ENV PORT=80 \
     APP_ENV=production \
     APP_DEBUG=false \
     LOG_CHANNEL=stderr \
@@ -46,5 +46,5 @@ ENV PORT=8080 \
     SESSION_SECURE_COOKIE=true
 
 USER www-data
-EXPOSE 8080
+EXPOSE 80
 CMD ["frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile"]

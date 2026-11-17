@@ -7,6 +7,19 @@
 **/.env.*
 auth.json
 **/auth.json
+# Local package/cloud credentials and private key bundles, at any depth.
+**/.npmrc
+**/.netrc
+**/.aws
+**/.ssh
+**/.config/gcloud
+**/credentials.json
+**/*service-account*.json
+**/secrets
+**/id_rsa*
+**/id_ed25519*
+**/*.p12
+**/*.pfx
 vendor
 node_modules
 tests
@@ -20,6 +33,8 @@ phpunit.xml
 *.md
 *.sql
 *.sql.gz
+**/*.sql
+**/*.sql.gz
 *.sqlite*
 **/*.sqlite*
 **/*.pem

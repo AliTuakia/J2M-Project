@@ -50,7 +50,11 @@ Composer 2 dan PHP 8.3 diperlukan hanya untuk menjalankan tooling PHP di host. D
 
 Ekstensi eksplisit: **ctype, dom, fileinfo, mbstring** untuk requirement dependency, **pdo_mysql** untuk database aktual, **opcache** untuk runtime, dan **zip** untuk ekstraksi paket Composer. Ekstensi dasar seperti filter, hash, iconv, JSON, libxml, OpenSSL, PCRE, PDO, session, tokenizer disediakan PHP base dan diperiksa Composer. Redis, GD, intl dan pdo_pgsql tidak ditambahkan karena belum diperlukan fitur aktif.
 
-Runtime berjalan sebagai `www-data`; hanya storage, bootstrap/cache, serta direktori kerja Caddy yang dibuat writable. Source tetap root-owned. Caddy mendengar `PORT` (default 8080), hanya mengekspos `/app/public`, melayani static asset dan meneruskan route aplikasi ke index.php. TLS diterminasi ingress Vercel. Caddy admin API dimatikan. `.env`, kredensial Composer, data storage host, cache host, SQLite, vendor/node_modules host, .git dan tests tidak masuk build context. Vendor production dibuat ulang dalam build, bukan disalin dari host.
+Runtime berjalan sebagai `www-data`; hanya storage, bootstrap/cache, serta direktori kerja Caddy yang dibuat writable. Source tetap root-owned. Caddy mendengar `PORT` (default 80), hanya mengekspos `/app/public`, melayani static asset dan meneruskan route aplikasi ke index.php. TLS diterminasi ingress Vercel. Caddy admin API dimatikan. `.env`, kredensial Composer, data storage host, cache host, SQLite, vendor/node_modules host, .git dan tests tidak masuk build context. Vendor production dibuat ulang dalam build, bukan disalin dari host.
+
+Dockerfile menetapkan `PORT=80` dan `EXPOSE 80`, dengan fallback Caddy `:{$PORT:80}`. Capability `CAP_NET_BIND_SERVICE` tetap dipertahankan untuk user non-root pada port 80. Override port 8080 untuk Docker lokal tetap didukung; tidak perlu Dockerfile kedua. `vercel.json` tetap memakai service `app`, runtime `container`, entrypoint `Dockerfile`, dan catch-all rewrite sesuai panduan resmi.
+
+Pola ignore juga mengecualikan credential npm/cloud/SSH, private key bundles, direktori secrets, dan dump database. Ini tidak mendeteksi secret yang ditulis di source dengan nama sembarang. Jangan memakai `git add -f` untuk melewati proteksi; review staged diff dan jalankan secret scanner sebelum push. Jika credential pernah ter-commit, ignore saja tidak cukup: rotasi credential dan bersihkan riwayat sesuai prosedur tim. `.env.example` boleh di Git hanya jika tetap tanpa secret asli; file ini tidak masuk image.
 
 `/health` mengembalikan `{"status":"ok"}` tanpa middleware web/session/auth; `/up` tetap ada. Ini **liveness**, bukan pemeriksaan kesiapan database. Middleware global masih berlaku.
 
@@ -83,7 +87,7 @@ Masukkan melalui Project Settings > Environment Variables; tentukan scope Develo
 | FILESYSTEM_DISK | `local` hanya untuk temporary/non-durable; bukan tempat upload permanen |
 | MYSQL_ATTR_SSL_CA | Jika provider meminta CA, path CA yang tersedia dalam container; jangan menunjuk path Windows |
 | DB_URL | Opsional alternatif DSN; jangan isi bersamaan dengan DB_* yang bertentangan |
-| PORT | Disediakan runtime Vercel; default image 8080 untuk lokal |
+| PORT | Ikuti nilai runtime Vercel; fallback/default image 80. Lokal dapat override menjadi 8080 |
 
 `TRUSTED_PROXIES` memungkinkan Laravel membaca scheme/host/IP dari ingress. Jangan gunakan wildcard ketika origin dapat diakses langsung dari jaringan tidak dipercaya. Preview memakai APP_URL dan secret sendiri; jangan menyalin production DB/key ke preview.
 
@@ -98,7 +102,7 @@ Set-Location 'C:\laragon\www\j2m'
 docker build --pull -t j2m:local .
 docker run --rm j2m:local frankenphp validate --config /etc/frankenphp/Caddyfile --adapter caddyfile
 docker run --rm j2m:local php -m
-docker run --rm -d --name j2m-local -p 8080:8080 --env-file 'C:\laragon\www\j2m\.env.local' j2m:local
+docker run --rm -d --name j2m-local -p 8080:8080 --env-file 'C:\laragon\www\j2m\.env.local' -e PORT=8080 j2m:local
 curl.exe --fail http://localhost:8080/health
 curl.exe --fail http://localhost:8080/up
 curl.exe --fail http://localhost:8080/
@@ -108,6 +112,12 @@ curl.exe --fail 'http://localhost:8080/images/products/kulit%20motif(1).jpeg'
 docker exec j2m-local id
 docker exec j2m-local sh -c 'test -w /app/storage && test -w /app/bootstrap/cache && test ! -e /app/.env && test ! -e /app/public/hot && test ! -d /app/node_modules && test ! -d /app/tests'
 docker logs j2m-local
+```
+
+Untuk menguji port container default 80 dengan URL host yang tetap di port 8080, gunakan alternatif berikut setelah container sebelumnya dihentikan:
+
+```powershell
+docker run --rm -d --name j2m-local -p 8080:80 --env-file 'C:\laragon\www\j2m\.env.local' -e PORT=80 j2m:local
 ```
 
 Buka katalog di browser dan klik detail produk yang benar-benar ada (jangan mengasumsikan ID). DevTools Network harus menunjukkan CSS/JS hasil manifest dan seluruh gambar 200. Uji login customer/admin dengan akun test nyata, authorization admin, keranjang, checkout simulasi, dan logout. Periksa cookie secure pada HTTPS dan tidak ada mixed content. Uji request `/.env` ditolak dan `/composer.json` tidak membocorkan source. Periksa log setelah semua request. Setelah selesai: `docker stop j2m-local`.
@@ -152,6 +162,8 @@ Session dan cache berada di database eksternal, termasuk rate limit login. Janga
 Foto existing adalah aset versi repository yang ikut setiap image, bukan upload runtime. Tidak ada fitur upload yang dihapus. Bila upload ditambahkan, pilih object storage eksternal seperti Vercel Blob atau storage kompatibel S3, simpan object key/URL di database, validasi tipe/ukuran file, dan kontrol akses. Vercel Blob bukan driver Laravel bawaan: perlu integrasi API/SDK yang diuji; sekadar FILESYSTEM_DISK=blob tidak bekerja. Disk s3 pada config juga memerlukan adapter Flysystem S3 yang belum terpasang. Token Blob/secret S3 hanya masuk environment; jangan menyimpan upload di public/storage atau filesystem container untuk jangka panjang.
 
 ## 7. GitHub, preview, production
+
+**Gate persetujuan:** jangan menjalankan deployment atau push ke branch yang memicu auto-deploy sebelum pemilik menyetujui. Perintah berikut adalah petunjuk untuk dijalankan setelah persetujuan, bukan tindakan yang sudah dilakukan dalam audit.
 
 1. Review `git diff` dan pastikan tidak ada secret, dump DB, atau .env yang tracked. Commit file deployment bersama source J2M yang ada dan push ke repository GitHub Anda.
 2. Di Vercel pilih Add New Project/Import Git Repository, beri integrasi akses hanya ke repository yang diperlukan. Root Directory adalah root J2M, bukan public.
