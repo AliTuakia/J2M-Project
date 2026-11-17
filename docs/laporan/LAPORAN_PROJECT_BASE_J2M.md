@@ -401,7 +401,7 @@ Konfigurasi Vercel mendefinisikan satu service bernama `app` dengan entrypoint `
 
 **Status Deployment**
 
-Website J2M telah dipublikasikan pada https://j2m-jok-motor.vercel.app. Deployment menggunakan konfigurasi Docker, FrankenPHP, Caddy, dan basis data MySQL Railway. Pengujian otomatis lokal setelah penambahan rating dan tautan footer menghasilkan 29 test dan 535 assertions yang seluruhnya lulus. Konfigurasi environment production tetap dikelola terpisah dari source code.
+Website dasar J2M telah dipublikasikan pada https://j2m-jok-motor.vercel.app. Deployment menggunakan konfigurasi Docker, FrankenPHP, Caddy, dan basis data MySQL Railway. Pembaruan rating produk serta tautan footer telah diimplementasikan dan diuji secara lokal dengan 29 test dan 535 assertions yang seluruhnya lulus. Pembaruan tersebut perlu melalui migration database dan deployment source code sebelum tersedia pada website production.
 
 ### 3.2 Pengelolaan Media Sosial
 
@@ -497,23 +497,19 @@ Pelaksanaan proyek menghasilkan beberapa output konkret:
 Website berbasis Laravel berhasil dikembangkan dengan fitur-fitur e-commerce simulasi yang fungsional. Arsitektur aplikasi terdiri atas:
 - 8 controller yang menangani logika bisnis (CatalogController, AuthController, CartController, CheckoutController, OrderController, ProductRatingController, AdminController, AdminProductController).
 - 8 model Eloquent (User, Category, Product, Cart, CartItem, Order, OrderItem, ProductRating) dengan relasi yang terdefinisi antar-model.
-- 5 file migration yang membentuk 10 tabel database (users, sessions, cache, cache_locks, jobs, job_batches, failed_jobs, categories, products, carts, cart_items, orders, order_items, product_ratings).
-- 19 file template Blade yang mencakup layout, halaman publik, panel admin, dan komponen reusable.
+- 5 file migration yang membentuk tabel aplikasi untuk pengguna, katalog, keranjang, pesanan, dan rating produk, serta tabel bawaan Laravel untuk sesi, cache, dan antrean.
+- Template Blade yang mencakup layout, halaman publik, panel admin, serta komponen reusable untuk kartu produk dan ringkasan rating.
 - Konfigurasi deployment Docker multi-stage yang siap digunakan untuk Vercel.
 
-Test suite Laravel mencatat 23 test dengan 451 assertions yang mencakup pengujian katalog, foto produk, label, autentikasi, keranjang, checkout, admin, struktur view, aset, dan health check.
+Test suite Laravel mencatat 29 test dengan 535 assertions yang mencakup pengujian katalog, foto produk, label, autentikasi, keranjang, checkout, admin, struktur view, aset, health check, rating produk, serta tautan Instagram dan Shopee pada footer.
 
 **2. Kehadiran di Media Sosial**
 
-Akun Instagram @j2m_tangsel aktif sebagai kanal promosi visual produk J2M. Konten yang diunggah menampilkan produk bahan jok dan hasil pengerjaan jok custom.
-
-[LENGKAPI DENGAN DATA JUMLAH POSTINGAN DAN FOLLOWERS JIKA TERSEDIA]
+Akun Instagram @j2m_tangsel digunakan sebagai kanal promosi visual produk J2M. Tautan akun telah diintegrasikan pada footer website sehingga pengunjung dapat mengaksesnya langsung.
 
 **3. Kehadiran di Marketplace**
 
-Produk J2M terdaftar di Shopee melalui tautan yang telah disediakan.
-
-[LENGKAPI DENGAN DATA TOKO SHOPEE DAN TOKOPEDIA JIKA TERSEDIA]
+Tautan toko Shopee J2M telah tersedia dan diintegrasikan pada footer website. Detail jumlah produk atau performa toko tidak dicantumkan karena data tersebut tidak dikumpulkan dalam ruang lingkup proyek.
 
 ### 4.2 Rekapitulasi Hasil Proyek
 
@@ -523,18 +519,17 @@ Produk J2M terdaftar di Shopee melalui tautan yang telah disediakan.
 | 2 | Katalog Produk Online | Selesai | 6 produk dengan foto, harga, kategori, pencarian, dan filter |
 | 3 | Sistem Checkout Simulasi | Selesai | Transaksi simulasi dengan proteksi konsistensi data |
 | 4 | Panel Administrasi | Selesai | Dashboard, manajemen produk, kategori, dan pesanan |
-| 5 | Rating Produk | Selesai | Sistem penilaian 1–5 bintang per pengguna per produk |
+| 5 | Rating Produk | Siap deploy | Sistem penilaian 1–5 bintang per pengguna per produk telah diuji secara lokal |
 | 6 | Konfigurasi Deployment | Selesai | Dockerfile, Caddyfile, vercel.json, dan dokumentasi deployment |
 | 7 | Akun Instagram | Tersedia | @j2m_tangsel |
-| 8 | Akun TikTok | [PERLU KONFIRMASI] | [MASUKKAN STATUS AKTUAL] |
-| 9 | Toko Shopee | Tersedia | Tautan toko tersedia |
-| 10 | Toko Tokopedia | [PERLU KONFIRMASI] | [MASUKKAN STATUS AKTUAL] |
+| 8 | Akun Instagram | Tersedia | Tautan akun tersedia pada footer website |
+| 9 | Toko Shopee | Tersedia | Tautan toko tersedia pada footer website |
 
 ### 4.3 Kendala Pelaksanaan
 
 Selama pelaksanaan proyek, beberapa kendala yang dihadapi meliputi:
 
-1. **Keterbatasan infrastruktur deployment:** Docker CLI/daemon dan Vercel CLI tidak tersedia pada lingkungan pengerjaan utama, sehingga build Docker dan deployment ke Vercel tidak dapat diverifikasi secara langsung selama proses pengembangan. Verifikasi dilakukan melalui test suite dan pemeriksaan manual terhadap konfigurasi.
+1. **Konfigurasi deployment production:** Deployment memerlukan penyelarasan environment variable aplikasi Laravel dan koneksi MySQL Railway. Tahap ini memerlukan pemeriksaan log karena perbedaan konfigurasi dengan Laragon lokal.
 
 2. **Kebutuhan database eksternal:** Deployment ke Vercel memerlukan database MySQL eksternal karena database lokal (Laragon) tidak dapat diakses dari lingkungan Vercel. Penyediaan dan konfigurasi database eksternal menjadi prasyarat tambahan yang harus dipenuhi.
 
@@ -548,9 +543,9 @@ Terhadap kendala yang dihadapi, langkah-langkah berikut telah atau dapat ditempu
 
 1. **Dokumentasi deployment yang komprehensif:** File `DEPLOYMENT.md` disusun secara rinci mencakup seluruh langkah deployment, konfigurasi environment, prosedur migration, pengujian, dan troubleshooting. Dokumentasi ini memungkinkan proses deployment dilakukan secara mandiri ketika infrastruktur tersedia.
 
-2. **Desain arsitektur yang deployment-ready:** Konfigurasi Docker multi-stage build, Caddyfile, dan vercel.json telah disiapkan sesuai panduan resmi Vercel untuk Laravel. Aplikasi dirancang agar portabel dan tidak bergantung pada environment lokal tertentu.
+2. **Desain arsitektur yang deployment-ready:** Konfigurasi Docker multi-stage build, Caddyfile, dan vercel.json digunakan untuk memisahkan kebutuhan development lokal dari runtime production.
 
-3. **Validasi melalui test suite:** Sebagai pengganti pengujian deployment langsung, test suite yang mencakup 23 test dan 451 assertions digunakan untuk memvalidasi kebenaran fungsional aplikasi.
+3. **Validasi melalui test suite:** Test suite dengan 29 test dan 535 assertions digunakan untuk memvalidasi perilaku aplikasi, termasuk fitur rating dan tautan sosial pada footer.
 
 4. **Penggunaan firstOrCreate pada seeder:** Seeder menggunakan `firstOrCreate` sehingga aman untuk dijalankan berulang tanpa menyebabkan duplikasi data. Deskripsi produk yang belum lengkap dapat diperbarui melalui panel admin tanpa perlu mengubah seeder.
 
@@ -562,11 +557,11 @@ Evaluasi pelaksanaan proyek dilakukan berdasarkan ketercapaian tujuan:
 |--------|-------------|---------|
 | Mengembangkan website e-commerce berbasis Laravel | Tercapai | Seluruh fitur utama telah diimplementasikan dan diuji |
 | Membangun fitur transaksi simulasi | Tercapai | Checkout simulasi berfungsi dengan proteksi konsistensi data |
-| Mengelola media sosial (Instagram, TikTok) | Sebagian tercapai | Instagram tersedia; status TikTok perlu dikonfirmasi |
-| Memanfaatkan marketplace (Shopee, Tokopedia) | Sebagian tercapai | Shopee tersedia; status Tokopedia perlu dikonfirmasi |
-| Mengintegrasikan platform digital | Sebagian tercapai | Website sebagai pusat informasi; integrasi melalui tautan antar platform |
+| Menghubungkan media sosial Instagram | Tercapai | Tautan Instagram tersedia pada footer website |
+| Memanfaatkan marketplace Shopee | Tercapai | Tautan Shopee tersedia pada footer website |
+| Mengintegrasikan platform digital | Tercapai | Website menjadi pusat informasi dan menyediakan tautan ke Instagram serta Shopee |
 
-Secara keseluruhan, komponen utama proyek yaitu website e-commerce telah berhasil diimplementasikan secara fungsional. Komponen pendukung berupa media sosial dan marketplace telah tersedia meskipun beberapa informasi detail masih perlu dilengkapi.
+Secara keseluruhan, website e-commerce beserta integrasi Instagram dan Shopee telah diimplementasikan secara fungsional dalam ruang lingkup simulasi akademik.
 
 ---
 
@@ -576,11 +571,11 @@ Secara keseluruhan, komponen utama proyek yaitu website e-commerce telah berhasi
 
 Berdasarkan pelaksanaan proyek dan pembahasan yang telah diuraikan, dapat ditarik kesimpulan sebagai berikut:
 
-1. Website e-commerce J2M berhasil dikembangkan menggunakan Laravel 13 dengan fitur katalog produk, sistem autentikasi, keranjang belanja, checkout simulasi, riwayat pesanan, rating produk, dan panel administrasi. Seluruh fitur transaksi dirancang sebagai simulasi akademik tanpa melibatkan pembayaran atau pengiriman nyata.
+1. Website e-commerce J2M berhasil dikembangkan menggunakan Laravel 13 dengan fitur katalog produk, sistem autentikasi, keranjang belanja, checkout simulasi, riwayat pesanan, panel administrasi, serta rating produk yang telah diuji secara lokal. Seluruh fitur transaksi dirancang sebagai simulasi akademik tanpa melibatkan pembayaran atau pengiriman nyata.
 
-2. Arsitektur website dibangun mengikuti pola MVC Laravel dengan 8 controller, 8 model, 19 template Blade, dan konfigurasi deployment Docker multi-stage. Test suite dengan 23 test dan 451 assertions memvalidasi kebenaran fungsional aplikasi.
+2. Arsitektur website dibangun mengikuti pola MVC Laravel dengan konfigurasi deployment Docker multi-stage. Test suite dengan 29 test dan 535 assertions memvalidasi fitur aplikasi, termasuk rating produk dan tautan sosial.
 
-3. Kehadiran digital J2M telah dibangun melalui beberapa platform: website sebagai pusat informasi dan simulasi transaksi, Instagram sebagai kanal promosi visual, TikTok sebagai kanal konten video pendek, serta Shopee dan Tokopedia sebagai kanal marketplace.
+3. Kehadiran digital J2M mencakup website sebagai pusat informasi dan simulasi transaksi, Instagram sebagai kanal promosi visual, serta Shopee sebagai kanal marketplace yang ditautkan dari footer website.
 
 4. Integrasi antar platform digital dilakukan melalui konsistensi informasi produk dan pengarahan audiens dari satu platform ke platform lainnya, dengan website sebagai titik pusat ekosistem digital J2M.
 
@@ -594,7 +589,7 @@ Untuk pengembangan lebih lanjut, beberapa saran yang dapat dipertimbangkan:
 
 3. **Penambahan fitur upload foto:** Website saat ini menggunakan foto yang tertanam di repository. Ke depan, fitur upload foto melalui panel admin dengan penyimpanan pada object storage eksternal (misalnya Vercel Blob atau S3) dapat memudahkan pengelolaan katalog produk.
 
-4. **Optimalisasi konten media sosial:** Frekuensi dan kualitas konten di Instagram dan TikTok dapat ditingkatkan dengan perencanaan konten yang lebih terstruktur, termasuk penggunaan hashtag yang relevan dan jadwal posting yang konsisten.
+4. **Optimalisasi konten media sosial:** Frekuensi dan kualitas konten Instagram dapat ditingkatkan dengan perencanaan konten yang lebih terstruktur, termasuk penggunaan hashtag yang relevan dan jadwal posting yang konsisten.
 
 5. **Eksplorasi fitur marketplace:** Pemanfaatan fitur-fitur marketplace seperti promosi toko, voucher, dan fitur chat penjual dapat dimaksimalkan untuk meningkatkan visibilitas dan interaksi dengan calon pembeli.
 
@@ -614,11 +609,7 @@ Docker. (2026). *Docker Desktop for Windows*. https://docs.docker.com/desktop/se
 
 Vercel. (2026). *Vercel Documentation*. https://vercel.com/docs
 
-Tailwind CSS. (2026). *Tailwind CSS Documentation*. https://tailwindcss.com/docs
-
 Vite. (2026). *Vite Documentation*. https://vitejs.dev/guide/
-
-[TAMBAHKAN REFERENSI LAIN YANG DIGUNAKAN SELAMA PENGERJAAN PROYEK]
 
 ---
 
@@ -673,10 +664,6 @@ Foto-foto produk berikut tersimpan dalam direktori `public/images/products/` pad
 
 [MASUKKAN SCREENSHOT PRODUK J2M DI SHOPEE DI SINI]
 
-[MASUKKAN SCREENSHOT TOKO J2M DI TOKOPEDIA DI SINI — JIKA TERSEDIA]
-
-[MASUKKAN SCREENSHOT AKUN TIKTOK J2M DI SINI — JIKA TERSEDIA]
-
 ### Lampiran 4: Struktur Proyek dan Arsitektur Aplikasi
 
 **Struktur Direktori Utama:**
@@ -693,7 +680,7 @@ j2m/
 │   ├── migrations/            # 4 file migration
 │   └── seeders/               # DatabaseSeeder
 ├── resources/
-│   ├── css/                   # app.css (Tailwind)
+│   ├── css/                   # app.css (CSS kustom)
 │   ├── js/                    # app.js
 │   └── views/                 # 19 template Blade
 │       ├── admin/             # Panel admin
@@ -711,7 +698,7 @@ j2m/
 ├── DEPLOYMENT.md              # Dokumentasi deployment
 ├── composer.json              # Dependency PHP
 ├── package.json               # Dependency Node.js
-└── vite.config.js             # Konfigurasi Vite + Tailwind
+└── vite.config.js             # Konfigurasi Vite
 ```
 
 **Diagram Arsitektur Sistem:**
