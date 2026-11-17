@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductRating;
 use Illuminate\Http\Request;
 
 class CatalogController extends Controller
@@ -12,10 +13,13 @@ class CatalogController extends Controller
     {
         return view('page.home', [
             'products' => Product::with('category')
+                ->withCount('ratings')->withAvg('ratings', 'score')
                 ->where('is_active', true)
                 ->limit(6)
                 ->get(),
             'categories' => Category::orderBy('name')->get(),
+            'ratingSummary' => ProductRating::whereHas('product', fn ($query) => $query->where('is_active', true))
+                ->selectRaw('COUNT(*) as total, AVG(score) as average')->first(),
         ]);
     }
 
@@ -27,6 +31,7 @@ class CatalogController extends Controller
         ]);
 
         $products = Product::with('category')
+            ->withCount('ratings')->withAvg('ratings', 'score')
             ->where('is_active', true)
             ->when($data['q'] ?? null, fn ($query, $q) => $query->where('name', 'like', '%'.$q.'%'))
             ->when($data['category'] ?? null, fn ($query, $id) => $query->where('category_id', $id))
@@ -40,9 +45,14 @@ class CatalogController extends Controller
         ]);
     }
 
-    public function show(Product $product)
+    public function show(Request $request, Product $product)
     {
         abort_unless($product->is_active, 404);
+
+        $product->load('category')->loadCount('ratings')->loadAvg('ratings', 'score');
+        $userRating = $request->user()
+            ? $product->ratings()->where('user_id', $request->user()->id)->value('score')
+            : null;
 
         // Legacy seed descriptions are not verified product specifications.
         $description = in_array($product->description, [
@@ -55,7 +65,7 @@ class CatalogController extends Controller
             $description = 'Jok motor custom yang dapat disesuaikan dengan selera Anda. Pelanggan dapat menentukan kombinasi bahan, warna, motif, tekstur, dan model jahitan sesuai keinginan.';
         }
 
-        return view('page.product-detail', compact('product', 'description'));
+        return view('page.product-detail', compact('product', 'description', 'userRating'));
     }
 
     public function requireLogin(Request $request, Product $product)
@@ -68,6 +78,6 @@ class CatalogController extends Controller
 
         $request->session()->put('url.intended', route('products.show', $product));
 
-        return redirect()->route('login')->with('message', 'Silakan masuk atau daftar, lalu tambahkan produk dari halaman detail.');
+        return redirect()->route('login')->with('message', 'Silakan masuk atau daftar untuk melanjutkan di halaman produk.');
     }
 }

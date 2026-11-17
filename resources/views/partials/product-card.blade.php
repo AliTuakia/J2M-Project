@@ -10,6 +10,7 @@
     <div class="product-body">
         <p class="eyebrow">{{ $product->category->name }}</p>
         <h3><a href="{{ route('products.show', $product) }}">{{ $product->name }}</a></h3>
+        @include('partials.product-rating')
         <p class="price">Rp{{ number_format($product->price, 0, ',', '.') }}</p>
         @if($product->usesIllustration())
             <p class="muted">Foto merupakan referensi visual, bukan desain yang wajib diikuti.</p>
