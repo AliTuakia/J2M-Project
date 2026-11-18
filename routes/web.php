@@ -7,7 +7,6 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\OrderController;
-use App\Http\Controllers\ProductRatingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [CatalogController::class, 'home'])->name('home');
@@ -23,8 +22,6 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::post('/produk/{product}/rating', [ProductRatingController::class, 'store'])
-        ->middleware('throttle:10,1')->name('products.rating');
     Route::post('/keluar', [AuthController::class, 'logout'])->name('logout');
     Route::get('/keranjang', [CartController::class, 'index'])->name('cart.index');
     Route::post('/keranjang/{product}', [CartController::class, 'store'])->name('cart.store');

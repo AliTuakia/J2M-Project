@@ -27,79 +27,59 @@ class ProductRatingTest extends TestCase
         ]);
     }
 
-    public function test_guests_can_read_ratings_but_cannot_submit_them(): void
-    {
-        $product = $this->product();
-        $this->get(route('products.show', $product))->assertOk()
-            ->assertSee('Belum ada rating')->assertSee('Masuk untuk memberi rating');
-        $this->post(route('products.rating', $product), ['score' => 5])
-            ->assertRedirect(route('login'));
-        $this->assertDatabaseCount('product_ratings', 0);
-    }
-
-    public function test_rating_is_owned_by_authenticated_user_and_updates_instead_of_duplicating(): void
+    public function test_rating_routes_return_404(): void
     {
         $product = $this->product();
         $user = User::factory()->create();
-        $other = User::factory()->create();
-        $product->ratings()->create(['user_id' => $other->id, 'score' => 1]);
 
-        $this->actingAs($user)->post(route('products.rating', $product), [
-            'score' => 5, 'user_id' => $other->id,
-        ])->assertSessionHasNoErrors()->assertRedirect(route('products.show', $product).'#rating');
-        $this->post(route('products.rating', $product), ['score' => 4])
-            ->assertSessionHasNoErrors();
+        // Guest POST to product rating returns 404
+        $this->post('/produk/'.$product->id.'/rating', ['score' => 5])
+            ->assertNotFound();
 
-        $this->assertDatabaseCount('product_ratings', 2);
-        $this->assertDatabaseHas('product_ratings', ['product_id' => $product->id, 'user_id' => $user->id, 'score' => 4]);
-        $this->assertDatabaseHas('product_ratings', ['product_id' => $product->id, 'user_id' => $other->id, 'score' => 1]);
-        $this->get(route('products.show', $product))->assertOk()->assertSee('Perbarui rating');
+        // Authenticated POST to product rating returns 404
+        $this->actingAs($user)
+            ->post('/produk/'.$product->id.'/rating', ['score' => 5])
+            ->assertNotFound();
+
+        // Non-existent rating pages return 404
+        $this->get('/rating')->assertNotFound();
+        $this->get('/page')->assertNotFound();
     }
 
-    public function test_invalid_scores_are_rejected_with_visible_errors(): void
+    public function test_public_pages_do_not_contain_rating_features_or_links(): void
     {
         $product = $this->product();
-        $this->actingAs(User::factory()->create());
 
-        foreach ([null, 0, 6, -1, 2.5, 'invalid', [5]] as $score) {
-            $response = $this->from(route('products.show', $product))
-                ->post(route('products.rating', $product), ['score' => $score])
-                ->assertRedirect(route('products.show', $product))
-                ->assertSessionHasErrors(['score'], null, 'rating');
+        // Homepage does not show rating sections
+        $this->get('/')
+            ->assertOk()
+            ->assertDontSee('PENILAIAN PENGGUNA')
+            ->assertDontSee('Rating Produk J2M')
+            ->assertDontSee('Beri rating')
+            ->assertDontSee('rating-overview');
 
-            $this->assertNotEmpty($response->getSession()->get('errors')->getBag('rating')->get('score'));
-        }
+        // Catalog does not show rating summaries or rating links
+        $this->get(route('catalog'))
+            ->assertOk()
+            ->assertDontSee('rating-summary')
+            ->assertDontSee('penilaian');
 
-        $this->assertDatabaseCount('product_ratings', 0);
-    }
+        // Product detail does not show rating form, rating options, or rating links
+        $this->get(route('products.show', $product))
+            ->assertOk()
+            ->assertDontSee('Beri rating produk')
+            ->assertDontSee('Masuk untuk memberi rating')
+            ->assertDontSee('Perbarui rating')
+            ->assertDontSee('#rating')
+            ->assertDontSee('rating-fieldset');
 
-    public function test_inactive_and_missing_products_cannot_be_rated(): void
-    {
-        $product = $this->product();
-        $product->update(['is_active' => false]);
-        $this->actingAs(User::factory()->create());
-        $this->post(route('products.rating', $product), ['score' => 5])->assertNotFound();
-        $this->post('/produk/999999/rating', ['score' => 5])->assertNotFound();
-        $this->assertDatabaseCount('product_ratings', 0);
-    }
-
-    public function test_real_averages_counts_and_footer_links_render_on_public_pages(): void
-    {
-        $product = $this->product();
-        $this->get('/')->assertOk()->assertSee('Belum ada rating.');
-        foreach ([1, 5] as $score) {
-            $product->ratings()->create(['user_id' => User::factory()->create()->id, 'score' => $score]);
-        }
-
-        foreach (['/', route('catalog'), route('products.show', $product)] as $url) {
-            $this->get($url)->assertOk()->assertSee('3,0 / 5')->assertSee('2 penilaian')
-                ->assertSee('https://www.instagram.com/j2m_tangsel/', false)
-                ->assertSee('https://s.shopee.co.id/2gCekvp5Nb?share_channel_code=1', false)
-                ->assertSee('target="_blank" rel="noopener noreferrer"', false);
-        }
-
-        $product->update(['is_active' => false]);
-        $this->get('/')->assertOk()->assertSee('Belum ada rating.')->assertDontSee('3,0 / 5');
+        // Authenticated user also does not see rating form on product detail
+        $this->actingAs(User::factory()->create())
+            ->get(route('products.show', $product))
+            ->assertOk()
+            ->assertDontSee('Beri rating produk')
+            ->assertDontSee('Kirim rating')
+            ->assertDontSee('#rating');
     }
 
     public function test_removing_user_or_product_cleans_up_ratings(): void

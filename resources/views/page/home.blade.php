@@ -39,24 +39,6 @@
     </div>
 </section>
 
-<section class="panel rating-overview" aria-labelledby="rating-overview-heading">
-    <div class="section-heading">
-        <div>
-            <p class="eyebrow">PENILAIAN PENGGUNA</p>
-            <h2 id="rating-overview-heading">Rating Produk J2M</h2>
-        </div>
-    </div>
-
-    @if($ratingSummary->total > 0)
-        <p class="rating-overview-score"><span class="rating-star" aria-hidden="true">★</span> {{ number_format($ratingSummary->average, 1, ',', '.') }} / 5</p>
-        <p>Dari {{ $ratingSummary->total }} penilaian untuk produk aktif di katalog J2M.</p>
-    @else
-        <p>Belum ada rating. Pilih produk di katalog untuk memberikan penilaian pertama.</p>
-    @endif
-    <p class="muted">Rating berasal dari pengguna website simulasi J2M.</p>
-    <a class="text-link" href="{{ route('catalog') }}">Pilih produk untuk dinilai →</a>
-</section>
-
 <section id="custom-jok" class="info-strip">
     <h2>Jasa custom jok</h2>
     <p>J2M menyediakan layanan custom jok motor. Lihat produk Satu Set Jok Custom di katalog untuk mengetahui harga dan mencoba pemesanan simulasi.</p>
